@@ -33,7 +33,7 @@ Now go to your TASM directory and put the files inside it
 
 
 ### Step5
-```
+```
 # compile
 > tasm.exe rr.asm
 
@@ -44,3 +44,7 @@ Now go to your TASM directory and put the files inside it
 # execute
 > rr.exe
 ```
+
+![A screenshot of ASM River Raid](https://raw.githubusercontent.com/thiagoh/asm-river-raid/master/asm-river-raid.png)
+
+_Thanks to my graduation collegues [Thulio Costa](https://github.com/thulio) and Marcos Aurélio_
