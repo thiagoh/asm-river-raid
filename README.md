@@ -1,5 +1,7 @@
 # asm-river-raid
-Simple River Raid game made in assembly
+Simple River Raid game made in assembly 
+
+This project was build for an _assembly_ course of Computer Engineer at University of Pernambuco. _Thanks to my graduation collegues [Thulio Costa](https://github.com/thulio)_ who worked with me in this project.
 
 # Build in Ubuntu
 
@@ -47,4 +49,4 @@ Now go to your TASM directory and put the files inside it
 
 ![A screenshot of ASM River Raid](https://raw.githubusercontent.com/thiagoh/asm-river-raid/master/asm-river-raid.png)
 
-_Thanks to my graduation collegues [Thulio Costa](https://github.com/thulio) and Marcos Aurélio_
+
