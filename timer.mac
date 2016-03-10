@@ -1,0 +1,51 @@
+Comment # E012 Uso do timer da BIOS para temporizacao de baixa resolucao. #
+;-------------------------------------------------------------------
+
+include macros15.mac             ;inclui arquivos de macro
+
+setimer macro   low,high        ;Seta o timer da BIOS com valores passados      
+        push    ax              ;Salva registradores
+        push    bx
+        push    cx
+        push    dx
+        mov     dx,low          ;carrega byte low
+        mov     cx,high         ;carrega byte high
+        mov     ah,1            ;Carrega funcao para setar o contador
+        int     1Ah             ;chama interrupcao
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
+        endm
+
+rdtimer macro   low,high        ;Retorna timer da BIOS em cx:dx
+        push    ax
+        mov     ah,0            ;Carrega funcao para ler o contador
+        int     1ah             ;chama interrupcao
+        pop     ax
+        endm
+
+waitic  macro   ticks           ;aguarda # de time tics do low timwr da BIS
+        local   wai
+        setimer 0,0             ;zera o timer da BIOS
+wai:    rdtimer                 ;ler o timer
+        cmp     dx,ticks        ;Compara dx = low com tics
+        jbe     wai             ;Se o tempo nao acabou espera
+        endm
+
+waitms  macro   msecs           ;Implementa um delay em ms
+        push    ax              ;Salva registradores
+        push    bx
+        push    cx
+        push    dx
+        mov     ax,msecs        ;carrega ax com o tempo em ms
+        mov     bl,54d          ;dividir por 54 ms
+        div     bl              ;retorna em al com time tics
+        mov     ah,0            ;zera ah p/ ficar com ax=al
+        waitic  ax              ;Aguarda time tics
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
+        endm
+

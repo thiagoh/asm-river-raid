@@ -1,0 +1,425 @@
+;ARQUIVO DE MACROS. INCLUA NESTE ARQUIVO AS MACROS SUAS E OUTRAS ÚTEIS
+;NAO PODE SER MONTADO ISOLADAMENTE. DEVE SER INCLUIDO EM UM PROGRAMA .ASM
+;
+;EQUATES---------------------------------------------------------------------
+CR      EQU     0DH             ;Define carriage return
+LF      EQU     0AH             ;Define line feed
+;MACROS----------------------------------------------------------------------
+INICIA  MACRO                   ;Macro para iniciar DS
+        MOV     AX,@data        ;Carrega endereco da area de dados em AX
+        MOV     DS,AX           ;Carrega endereco da area de dados em DS
+        ENDM                    ;Fim da macro
+;---------------------------------------------------------------------------
+TERMINA MACRO                   ;Macro para terminar um programa
+        MOV     AX,4C00H        ;Carrega operando de saida para o DOS
+        INT     21H             ;Executa a interrupcao (sai do DOS)
+        ENDM                    ;Fim da macro
+;---------------------------------------------------------------------------
+;COMMENT # Imprime uma string na tela, a string tem que terminar por $ #
+
+PRNstr  MACRO   X1              ;MACRO PARA IMPRIMIR STRING NA TELA
+        PUSH    AX
+        PUSH    DX
+        LEA     DX,X1           ;CARREGA DX COM O ENDERECO DO STRING
+        MOV     AH,09H          ;CARREGA FUNCAO A SER EXECUTADA
+        INT     21H             ;CHAMA INTERRUPCAO 21
+        POP     DX
+        POP     AX
+        ENDM                    ;FIM DA MACRO
+;---------------------------------------------------------------------------
+
+;COMMENT # Imprime uma string na tela, a string tem que terminar por $ #
+
+PRNstrMod  MACRO   X1              ;MACRO PARA IMPRIMIR STRING NA TELA
+        PUSH    AX
+        PUSH    DX
+        LEA     DX,X1           ;CARREGA DX COM O ENDERECO DO STRING
+        MOV     AH,09H          ;CARREGA FUNCAO A SER EXECUTADA
+        INT     21H             ;CHAMA INTERRUPCAO 21
+	  	
+        POP     DX
+        POP     AX
+        ENDM                    ;FIM DA MACRO
+;---------------------------------------------------------------------------
+
+
+;---------------------------------------------------------------------------
+Comment # Esta Macro imprime um numero de 8 bits na tela, o numnero ‚
+passado p/ ela no momento da chamada #
+
+
+PRN8BT  MACRO   VAL             ;Inicio de macro
+        LOCAL   L1,L2           ;Labels locais
+        JMP     L2              
+L1:     DB      0,0,0,'$'       ;Area de impressao
+L2:     PUSH    BX              ;Salva reg.
+        PUSH    AX
+        PUSH    CX
+        PUSH    DX
+        PUSH    DI
+        PUSH    DS              ;Salva o DS atual
+
+        MOV     AL,VAL          ;alor a imprimir fica em al
+
+        PUSH    CS              ;Carrega CS em DS
+        POP     DS
+        MOV     AH,00H          ;Zera AH
+        LEA     DI,L1           ;Carrega OFFSET da area de rascunho
+        MOV     BL,10           ;Carrega divisor
+        DIV     BL              ;Calcula digito LSD
+        OR      AH,30H          ;Converte para ASCII
+        MOV     [DI+2],AH       ;Salva na posicao apontada
+        MOV     AH,0            ;Zera AH
+        DIV     BL              ;Calcula digito medio e msb
+        OR      AH,30H          ;Converte p/ ASCII
+        MOV     [DI+1],AH       ;Salva na posicao de memoria
+        OR      AL,30H          ;Converte para ASCII
+        MOV     [DI],AL         ;Salva na posicao de memoria
+
+        LEA     DX,l1           ;Aponta DX p/ end. da cadeia
+        MOV     AH,09H          ;Carrega funcao 09H
+        INT     21H             ;Chama o DOS
+        POP     DS              ;Recupera o DS
+        POP     DI              ;Recupera os registradores
+        POP     DX
+        POP     CX
+        POP     AX
+        POP     BX
+        ENDM                    ;Indica fim da macro
+;---------------------------------------------------------------------------
+;esta macro imprimi na tela, a partir do cursor,
+;um valor de 16 bits (00000...655350
+
+PRN16BT Macro  val             ;Inicio da macro
+        Local   l1,l2,l3        ;Labels locais
+        jmp     l2
+L1:     DB      0,0,0,0,0,'$'   ;Area de impressao
+L2:     push    si              ;Salva registradores a sujar
+        push    cx
+        push    bx
+        push    dx
+        push    ax
+        push    ds
+
+        mov     ax,val          ;Valor a imprimir fica em ax
+
+        push    cs
+        pop     ds              ;Salva cs em ds
+
+        mov     bx,0ah
+        mov     cx,05h
+        mov     si,cx
+        dec     si
+
+L3:     Mov     dx,00h                  ;Zera dx
+        Mov     bx,10                   ;Carrega divisor
+        div     bx                      ;Calcula digito lsd        
+        or      dl,30h                  ;Marcara para obter ASCII
+        mov     byte ptr [l1+si],dl     ;Salva n aposicao apontada
+        dec     si
+        loop    l3
+
+        lea     dx,l1           ;aponta dx para endereco da cadeia
+        mov     ah,09h          ;Carrega funcao 09h
+        int     21h             ;Chama o DOS
+        pop     ds              ;Recupera os registradores
+        pop     ax
+        pop     dx
+        pop     bx
+        pop     cx
+        pop     si
+        endm                    ;Indica fim da macro
+
+;----------------------------------------------------------------------------
+;esta macro ler um string do teclado e salva na variável de memoria apontada pela macro
+; a variavel de memoria tem que ter espaço suficiente para a string a ser lida
+; Numero de entradas, espaço para retorno de numeros de caracteres digitados, caracteres digitados + enter
+; 6,?,6 dup(?) 
+
+readstr macro   buf             ;Macro para ler STRING para buffer de memoria
+        push    dx              ;Salva registradores que vai sujar
+        push    ax
+        lea     dx,buf          ;Carrega endereco da variável onde a string será salva
+        mov     ah,0ah          ;Carrega funcao 0ah para int 21h
+        int     21h             ;Chama a interrupcao
+        pop     ax
+        pop     dx
+        endm
+;-------------------------------------------------------------------
+;macro para escrever dados na porta de dados da porta paralela
+;dado a ser escrito é passado na macro
+
+outdados macro val
+	push	dx
+	
+	mov	dx,37Ah		;endereço da porta de controle
+	in	al,dx		;lê dados da porta de controle, não altera valor da porta de controle
+	and	al,11011111b	;zera control bit 5
+	out	dx,al		;reescreve a mesma palavra na porta de controle zerando o bit 5	(porta de saida)
+
+	mov	dx,378h		;endereço da porta de dados da porta paralela
+	mov	al,val		;carrega valor para escrever na porta
+	out	dx,al		;escreve dado na porta
+	
+	
+	pop	dx
+	endm
+;-------------------------------------------------------------------
+;macro para ler dados na porta de dados da porta paralela
+;dado lido retorna na variável passada na macro
+
+INdados macro val
+	push	dx
+	
+	mov	dx,37Ah		;endereço da porta de controle
+	in	al,dx		;lê dados da porta de controle, não altera valor da porta de controle
+	or	al,20h		;seta control bit 5
+	out	dx,al		;reescreve a mesma palavra na porta de controle setando o bit 5
+
+	mov	dx,378h		;endereço da porta de dados da porta paralela
+	in	al,dx		;ler estados das chaves da porta de dados
+	mov	val,al		;carrega valor para escrever na porta
+
+	pop	dx
+	endm
+;-------------------------------------------------------------------
+;macro para ler dados na porta de STATUS da porta paralela
+;dado lido retorna na variável passada na macro
+
+INstatus macro val
+	push	dx
+
+	mov	dx,379h		;endereço da porta de status da porta paralela
+	in	al,dx		;ler estados das chaves da porta de dados
+	and	al,11111000b	;zera dados inexistentes
+	shr	al,3		;rotaciona 3 bits para a direita al
+	xor	al,10h		;inverte bit mais significativo da porta de Status
+	mov	val,al		;carrega valor para escrever na porta
+
+	pop	dx
+	endm
+;-------------------------------------------------------------------
+;macro para ler dados na porta de CONTROLE da porta paralela
+;dado lido retorna na variável passada na macro
+
+INctrl  macro val
+	push	dx
+
+	mov	dx,37Ah		;endereço da porta de controle da porta paralela
+	in	al,dx		;ler estados das chaves da porta de dados
+	and	al,00001111b	;zera bits não existentes
+	xor	al,0Bh		;inverte bits C0, C1 e C2
+	mov	val,al		;carrega valor para escrever na porta
+
+	pop	dx
+	endm
+;-------------------------------------------------------------------
+;macro para escrever dados na porta de CONTROLE da porta paralela
+;dado a ser escrito é passado na macro
+
+outctrl macro val
+	push	dx
+	
+	mov	dx,37Ah		;endereço da porta de CONTROLE da porta paralela
+	mov	al,val		;carrega valor para escrever na porta
+	and	al,0Fh		;Só deixa escrever nos quatro bits que têm contatos externos
+	xor	al,0Bh		;inverte bits C0, C1 e C2	
+	out	dx,al		;escreve dado na porta
+	
+	pop	dx
+	endm
+;-----------------
+
+COMMENT # MACRO PARA RECUPERAR TODOS OS REGISTRADORS #
+
+POPDCBA MACRO
+        POP     DX
+        POP     CX
+        POP     BX
+        POP     AX
+        ENDM
+;--------------------------------------------------
+
+
+COMMENT # MACRO PARA SALVAR TODOS OS REGISTRADORS #
+
+PSHABCD MACRO
+        PUSH    AX
+        PUSH    BX
+        PUSH    CX
+        PUSH    DX
+        ENDM
+
+;--------------------------------------------------
+
+COMMENT # Esta macro limpa a tela, sem alterar o padrÆo de cores.  #
+
+
+SetColorInim macro x1,x2
+
+    	     push    ax
+	     push    cx
+	     push    dx
+
+
+	   mov al, 1100b
+	   mov cx, x1
+	   mov dx, x2
+	   mov ah, 0ch
+	   int 10
+
+
+	     pop     dx
+	     pop     cx
+ 	     pop     ax
+		 endm
+
+
+
+
+
+
+CLRInimFrente macro x1,x2
+
+	     push    ax
+	     push    bx
+	     push    cx
+	     push    dx
+
+	   	 mov	 ah, 06h
+	   	 mov	 al, 03h
+	   	 mov 	 bh, 99h          ; seta a cor da trajetoria do Inimigo
+
+  		 sub 	 dh, 3d
+		 mov	 ch, dh
+		 mov	 cl, dl
+		 add     cl, 3d
+
+		 int	 10h			; seta a posicao correta de apagar
+
+	     pop     dx
+	     pop     cx
+	     pop     bx
+ 	     pop     ax
+		 endm
+
+
+
+CLRInimDiagDireita macro x1,x2
+
+	     push    ax
+	     push    bx
+	     push    cx
+	     push    dx
+
+	   	 mov	 ah, 06h
+	   	 mov	 al, 03h
+	   	 mov 	 bh, 99h          ; seta a cor da trajetoria do Inimigo
+
+		 mov	 ch, dh
+		 mov	 cl, dl
+		 add   cl, 1d
+
+		 int	 10h			; seta a posicao correta de apagar
+
+	     pop     dx
+	     pop     cx
+	     pop     bx
+ 	     pop     ax
+		 endm
+
+
+
+CLRInimDiagEsquerda macro x1,x2
+
+	     push    ax
+	     push    bx
+	     push    cx
+	     push    dx
+
+	   	 mov	 ah, 06h
+	   	 mov	 al, 03h
+	   	 mov 	 bh, 99h          ; seta a cor da trajetoria do Inimigo
+
+		 mov	 ch, dh
+		 mov	 cl, dl
+		 add   cl, 1d
+
+		 int	 10h			; seta a posicao correta de apagar
+
+	     pop     dx
+	     pop     cx
+	     pop     bx
+ 	     pop     ax
+		 endm
+
+
+CLRSCR  macro   x1		 ;Rotina para apagar tela
+        push    ax
+        push    bx
+        push    cx
+        push    dx
+        mov     ah,06h          ;Carrega funcao para interrupcao 10h
+        mov     al,00h          ;especifica tela inteira
+        mov     bh,x1           ;determina atributo do caracter
+                                ;0 <- Background preto
+                                ;7 -> Foreground cinza
+        mov     cx,0            ;linha/coluna inicio 0000h
+        mov     dx,184fh        ;linha fim = 18h=24d
+                                ;coluna fim = 4fh=79d
+;	  mov     dx,5019h	  ;linha fim = 50h=80d
+					  ;coluna fim = 19h=25d
+
+        Int     10h             ;Chama rotina da bios
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
+	ENDM
+
+CLRPoint macro
+
+	     push    ax
+	     push    bx
+	     push    cx
+	     push    dx
+		 add	 dh, 1
+		 mov	 ch, dh
+		 mov	 cl, dl
+	   	 mov	 ah, 06h
+	   	 mov	 al, 01h
+;		 mov   bx,20h
+	   	 mov 	 bh, 9Fh          ; seta a cor da trajetoria do tiro
+		 int	 10h			; seta a posicao correta de apagar
+		 sub	 dh, 1
+	     pop     dx
+	     pop     cx
+	     pop     bx
+ 	     pop     ax
+		 endm
+
+setpal  macro   pal             ;stea a paleta para grafic
+        mov     ah,0bh          ;funcao da bios
+        mov     bh,01h          ;parametroi para seleciona paleta
+        mov     bl,pal          ;valor da cor a ser usada na paleta
+        int     10h
+        endm
+
+        
+setbkg  macro   cor             ;seta a cor do fndo
+        mov     ah,0bh          ;funcao da vios
+        mov     bh,00           ;Parametro para selecionar cor de bkg
+        mov     bl,cor          ;Valor da cor a ser usada na paleta
+        int     10h             ;inicializa os parametros pela bios
+        endm
+
+putpix  macro   pag,cor,lin,col ;plota um pixel
+        pshabcd
+        mov     al,cor          ;carrega a cor do pixel
+        mov     bh,pag          ;carrega a pagina de video
+        mov     cx,col          ;carrega coluna do pixel
+        mov     dx,lin          ;carrega linha do pixel
+        mov     ah,0ch          ;funcao d bios para exibir pixel
+        int     10h
+        popdcba
+        endm

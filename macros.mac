@@ -1,0 +1,82 @@
+;equates
+cr	equ	0dh
+lf	equ	0ah
+
+;macros
+inicia macro
+	mov AX,@data
+	mov DS,AX
+	endm
+;-----------------------------
+termina macro
+	mov 	AX,4c00H
+	int 	21h
+	endm
+
+;-----------------------------
+prnstr macro x1
+	push ax
+	push dx
+	lea dx, x1
+	mov ah, 09h
+	int 21h
+	pop dx
+	pop ax
+	endm
+;------------------------------
+
+
+
+gotoxy	Macro	x,y
+	push	ax
+	push	bx
+	push	dx
+	mov	ah,2h
+	mov	dh,x
+	mov	dl,y
+	mov	bh,0h
+	int	10h
+	pop	dx
+	pop	bx
+	pop 	ax
+	endm
+
+;---------------------------------
+
+confmodovideo macro modo
+
+	mov ax, modo 
+	int 10h       
+	endm
+
+
+;---------------------------------
+
+PRINT   MACRO   sdat
+LOCAL   next_char, s_dcl, printed, skip_dcl
+
+PUSH    AX      ; store registers...
+PUSH    SI      ;
+
+JMP     skip_dcl        ; skip declaration.
+        s_dcl DB sdat, 0
+
+skip_dcl:
+        LEA     SI, s_dcl
+        
+next_char:      
+        MOV     AL, CS:[SI]
+        CMP     AL, 0
+        JZ      printed
+        INC     SI
+        MOV     AH, 0Eh ; teletype function.
+        INT     10h
+        JMP     next_char
+printed:
+
+POP     SI      ; re-store registers...
+POP     AX      ;
+ENDM
+
+;----------------------------------
+
